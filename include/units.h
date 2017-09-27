@@ -1,14 +1,24 @@
 #pragma once
 
 #include <ratio>
-#include <iostream>
-#include <sstream>
 #include <ctgmath>
 
+#ifndef UNIT_BASETYPE
+#define UNIT_BASETYPE double 
+#endif 
+
+#ifndef UNIT_NO_STREAMS 
+#define UNIT_HAS_STREAMS
+#endif 
+
+#ifdef UNIT_HAS_STREAMS
+#include <iostream>
+#include <sstream>
+#endif 
 
 namespace unit {
 
-template <typename Unit, typename MagnitudeRepresentation = double>
+template <typename Unit, typename MagnitudeRepresentation = UNIT_BASETYPE>
 class Quantity {
     template <typename, typename>
     friend class Quantity;
@@ -263,11 +273,11 @@ namespace helper {
 template <typename power, typename T>
 constexpr auto
 pow_impl(T const& v)
- -> decltype(pow(v, static_cast<double>(power::num) / static_cast<double>(power::den)))
+ -> decltype(pow(v, static_cast<UNIT_BASETYPE>(power::num) / static_cast<UNIT_BASETYPE>(power::den)))
 
 {
     using std::pow;
-    return pow(v, static_cast<double>(power::num) / static_cast<double>(power::den));
+    return pow(v, static_cast<UNIT_BASETYPE>(power::num) / static_cast<UNIT_BASETYPE>(power::den));
 }
 
 }
@@ -307,7 +317,7 @@ template <typename U>
 constexpr const char* unitSymbol();
 
 namespace helper {
-
+#ifdef UNIT_HAS_STREAMS
 namespace print {
 
 template <typename U, DimensionIndex pos>
@@ -334,8 +344,11 @@ struct DimensionsPrinter<U, 0> {
     static void print_unit(std::ostream& s) { print_unit_symbol_and_exponent<U, 0>(s); }
 };
 }
+#endif //UNIT_HAS_STREAMS
 }
 
+
+#ifdef UNIT_HAS_STREAMS
 template <typename U>
 void print_unit(std::ostream& s) {
     helper::print::DimensionsPrinter<U, U::exponent_count() - 1>::print_unit(s);
@@ -377,6 +390,9 @@ std::ostream& operator<<(std::ostream& s, Quantity<Unit, TValue> const& v) {
     print_unit<Unit>(s);
     return s;
 }
+
+#endif //UNIT_HAS_STREAMS
+
 namespace helper {
 
 template <typename ratioIn, typename ratioOut, typename T>
@@ -459,7 +475,7 @@ using mol_inv = quotient_unit< unitless, mole>;
 
 namespace t {
 
-    using def = double;
+    using def = UNIT_BASETYPE;
 
 
     using unitless = Quantity<u::unitless, def>;
@@ -555,16 +571,16 @@ constexpr t::unitless percent{centi(1.0)};
 
 
 
-constexpr t::kelvin celsius ( double v ){ return t::kelvin {static_cast<double>(v+273.15)};}
-constexpr t::kelvin fahrenheit ( double v ){ return t::kelvin {static_cast<double>((v+459.67)*5.0/9.0)};}
+constexpr t::kelvin celsius ( UNIT_BASETYPE v ){ return t::kelvin {static_cast<UNIT_BASETYPE>(v+273.15)};}
+constexpr t::kelvin fahrenheit ( UNIT_BASETYPE v ){ return t::kelvin {static_cast<UNIT_BASETYPE>((v+459.67)*5.0/9.0)};}
 
 
 namespace literals {
 
-constexpr t::unitless operator"" _unitless ( long double v ) {return t::unitless {static_cast<double>(v)};}
-constexpr t::unitless operator"" _number ( long double v ) {return t::unitless {static_cast<double>(v)};}
-constexpr t::unitless operator"" _n ( long double v ) {return t::unitless {static_cast<double>(v)};}
-constexpr t::newton operator"" _newton ( long double v ) {return t::newton {static_cast<double>(v)};}
+constexpr t::unitless operator"" _unitless ( long double v ) {return t::unitless {static_cast<UNIT_BASETYPE>(v)};}
+constexpr t::unitless operator"" _number ( long double v ) {return t::unitless {static_cast<UNIT_BASETYPE>(v)};}
+constexpr t::unitless operator"" _n ( long double v ) {return t::unitless {static_cast<UNIT_BASETYPE>(v)};}
+constexpr t::newton operator"" _newton ( long double v ) {return t::newton {static_cast<UNIT_BASETYPE>(v)};}
 
 }
 
@@ -579,7 +595,7 @@ template<> inline constexpr const char* unitSymbol< u::mole>(){ return "mol";}
 template<> inline constexpr const char* unitSymbol< u::candela>(){ return "cd";}
 
 
-
+#ifdef UNIT_HAS_STREAMS
 template<typename U> void print_unit(std::ostream& s);
 
 
@@ -603,6 +619,7 @@ template<> inline void print_unit< u::gray>(std::ostream& s){ s<<"Gy"; }
 
 template<> inline void print_unit< u::katal>(std::ostream& s){ s<<"ka"; }
 
+#endif
 }
 
 
